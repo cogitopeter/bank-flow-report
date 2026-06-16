@@ -26,7 +26,7 @@ def mask(s):
     if not s: return s
     t = s.strip()
     if any(k in t for k in ORG_KW): return s
-    if re.fullmatch(r'[一-龥·]{2,4}', t): return '*' + t[1:]
+    if re.fullmatch(r'[一-龥·]{2,4}', t): return t[0] + '*' * (len(t) - 1)  # 留姓隐名：沈路平→沈**
     return s
 def mask_data(d):
     import copy; x = copy.deepcopy(d)

@@ -48,6 +48,7 @@ description: "银行流水财务分析报告生成器。当用户提供一份银
   "cols": {"date":"实际发生时间","amount":"发生额","dc":"借贷标志","counterparty":"对方户名","summary":"摘要","memo":"交易备注","balance":"余额"},
   "dc_in": "贷", "dc_out": "借",
   "dedup_priority": ["新数据","老数据"],
+  "dedup": "auto",
   "big_threshold": 200000,
   "mask_site": true,
   "subtitle": "银行账户流水财务分析报告",
@@ -55,7 +56,7 @@ description: "银行流水财务分析报告生成器。当用户提供一份银
   "meta": {"name":"主体全称","account":"账号","subject_type":"非营利/社团"}
 }
 ```
-说明：`big_threshold` 大额阈值按规模酌定（社团 20 万、个人可设 5 万）；`mask_site:true` 时网站与图表版脱敏、文字版留真名（用户既定偏好）。
+说明：`big_threshold` 大额阈值按规模酌定（社团 20 万、个人可设 5 万）；`mask_site:true` 时网站与图表版脱敏（保留姓、名转 `*`，如 `张伟明→张**`）、文字版留真名（用户既定偏好）；`dedup` 默认 `"auto"`（仅多 sheet 时按 `dedup_priority` 去重；单 sheet 不去重，避免误删同日同额交易），可填 `true`/`false` 强制；CSV 编码自动探测（utf-8/gbk/gb18030），异常时用 `encoding` 字段指定。
 
 ### Step 2：跑分析引擎
 ```

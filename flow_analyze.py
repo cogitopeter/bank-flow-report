@@ -49,7 +49,15 @@ def num(v):
 # ---------- 读取 + 合并去重 ----------
 src = os.path.join(os.path.dirname(CFG) or '.', cfg['src'])
 if src.lower().endswith('.csv'):
-    sheets = {'_': pd.read_csv(src, dtype=str)}
+    df_csv = None
+    for enc in [cfg.get('encoding'), 'utf-8-sig', 'gbk', 'gb18030']:   # 银行 CSV 多为 GBK，自动探测
+        if not enc: continue
+        try:
+            df_csv = pd.read_csv(src, dtype=str, encoding=enc); break
+        except (UnicodeDecodeError, LookupError): continue
+    if df_csv is None:
+        print('！CSV 编码无法识别，请在 config.encoding 指定（如 gbk）'); sys.exit(1)
+    sheets = {'_': df_csv}
 else:
     sheets = pd.read_excel(src, sheet_name=None, dtype=object)
 
@@ -72,12 +80,19 @@ for sn, df in sheets.items():
             'bal': num(d.get(COL['balance'])) if COL.get('balance') and d.get(COL['balance']) is not None else None,
         })
 
-seen = {}
-for r in rows:
-    key = (r['dt'].strftime('%Y-%m-%d %H:%M'), r['amt'], r['dc'], r['cp'], r['summary'])
-    if key not in seen or prio(r['sheet']) < prio(seen[key]['sheet']):
-        seen[key] = r
-data = sorted(seen.values(), key=lambda x: x['dt'])
+DEDUP = str(cfg.get('dedup', 'auto')).lower()   # 'auto'=仅多 sheet 去重 / 'true' 强制 / 'false' 不去重
+do_dedup = DEDUP == 'true' or (DEDUP == 'auto' and len(sheets) > 1)
+if do_dedup:
+    seen = {}
+    for r in rows:
+        key = (r['dt'].strftime('%Y-%m-%d %H:%M'), r['amt'], r['dc'], r['cp'], r['summary'])
+        if key not in seen or prio(r['sheet']) < prio(seen[key]['sheet']):
+            seen[key] = r
+    data = sorted(seen.values(), key=lambda x: x['dt'])
+    print(f'  去重：{len(rows)} → {len(data)} 笔（{len(sheets)} 个 sheet 按优先级合并）')
+else:
+    data = sorted(rows, key=lambda x: x['dt'])
+    print(f'  未去重：保留全部 {len(data)} 笔（单 sheet 默认不去重，避免误删同日同额交易）')
 if not data:
     print('！未解析到任何记录，请检查 config.cols 列名映射'); sys.exit(1)
 
@@ -181,11 +196,6 @@ def catlist(cd):
             for k, v in sorted(cd.items(), key=lambda x: -x[1]['sum'])]
 
 # ---------- 季节性 ----------
-mon_agg = defaultdict(lambda: {'in': [], 'out': []})
-tmp = defaultdict(lambda: {'in': 0, 'out': 0})
-for r in data:
-    tmp[r['dt'].strftime('%Y-%m')]['in' if is_in(r) else 'out' if is_out(r) else 'x'] = \
-        tmp[r['dt'].strftime('%Y-%m')].get('in' if is_in(r) else 'out' if is_out(r) else 'x', 0)
 mser = defaultdict(lambda: {'in': 0, 'out': 0})
 for r in data:
     k = r['dt'].strftime('%Y-%m')
@@ -237,6 +247,8 @@ for r in data:
     if r['cp']: day_cp[(r['dt'].date(), r['cp'])].append(r)
 freq = [(k, v) for k, v in day_cp.items() if len(v) >= 3]
 
+conc_in, conc_out = conc(cp_in), conc(cp_out)
+
 result = {
     'meta': {**cfg.get('meta', {}), 'dc_in': DC_IN, 'dc_out': DC_OUT,
              'date_start': data[0]['dt'].strftime('%Y-%m-%d'),
@@ -262,11 +274,11 @@ result = {
     'top_in': top(cp_in), 'top_out': top(cp_out),
     'prop_in': proplist(prop_in), 'prop_out': proplist(prop_out),
     'cat_in': catlist(cat_in), 'cat_out': catlist(cat_out),
-    'conc': {'hhi_in': conc(cp_in)['hhi'], 'hhi_out': conc(cp_out)['hhi'],
-             'cr3_in': conc(cp_in)['cr3'], 'cr3_out': conc(cp_out)['cr3'],
-             'cr5_in': conc(cp_in)['cr5'], 'cr5_out': conc(cp_out)['cr5'],
-             'cr10_in': conc(cp_in)['cr10'], 'cr10_out': conc(cp_out)['cr10'],
-             'n_in_parties': conc(cp_in)['n'], 'n_out_parties': conc(cp_out)['n']},
+    'conc': {'hhi_in': conc_in['hhi'], 'hhi_out': conc_out['hhi'],
+             'cr3_in': conc_in['cr3'], 'cr3_out': conc_out['cr3'],
+             'cr5_in': conc_in['cr5'], 'cr5_out': conc_out['cr5'],
+             'cr10_in': conc_in['cr10'], 'cr10_out': conc_out['cr10'],
+             'n_in_parties': conc_in['n'], 'n_out_parties': conc_out['n']},
     'volatility': {'cv_in': cv(mi), 'cv_out': cv(mo),
                    'max_in': round(max(mi), 2) if mi else 0, 'max_out': round(max(mo), 2) if mo else 0},
     'season': season,

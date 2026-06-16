@@ -13,6 +13,7 @@
   "dc_in": "贷",
   "dc_out": "借",
   "dedup_priority": [],
+  "dedup": "auto",
   "big_threshold": 200000,
   "mask_site": true,
   "subtitle": "银行账户流水财务分析报告",
