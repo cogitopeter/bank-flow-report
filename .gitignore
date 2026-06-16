@@ -1,0 +1,20 @@
+# 防止真实流水数据与生成产物被误提交
+*.xlsx
+*.xls
+*.csv
+config.json
+narrative.json
+analysis/
+index.html
+charts.html
+report.html
+pic/*.jpg
+pic/*.png
+!examples/
+
+# 系统/编辑器
+.DS_Store
+__pycache__/
+*.pyc
+.vscode/
+.idea/

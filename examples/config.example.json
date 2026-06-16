@@ -1,0 +1,25 @@
+{
+  "src": "流水.xlsx",
+  "outdir": ".",
+  "cols": {
+    "date": "交易时间",
+    "amount": "发生额",
+    "dc": "借贷标志",
+    "counterparty": "对方户名",
+    "summary": "摘要",
+    "memo": "交易备注",
+    "balance": "余额"
+  },
+  "dc_in": "贷",
+  "dc_out": "借",
+  "dedup_priority": [],
+  "big_threshold": 200000,
+  "mask_site": true,
+  "subtitle": "银行账户流水财务分析报告",
+  "report_date": "2026-01-01",
+  "meta": {
+    "name": "示例创新服务中心",
+    "account": "0000000000000000000",
+    "subject_type": "非营利/社团"
+  }
+}
