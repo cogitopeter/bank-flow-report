@@ -51,12 +51,13 @@ description: "银行流水财务分析报告生成器。当用户提供一份银
   "dedup": "auto",
   "big_threshold": 200000,
   "mask_site": true,
+  "embed_echarts": true,
   "subtitle": "银行账户流水财务分析报告",
   "report_date": "今天日期 YYYY-MM-DD",
   "meta": {"name":"主体全称","account":"账号","subject_type":"非营利/社团"}
 }
 ```
-说明：`big_threshold` 大额阈值按规模酌定（社团 20 万、个人可设 5 万）；`mask_site:true` 时网站与图表版脱敏（保留姓、名转 `*`，如 `张伟明→张**`）、文字版留真名（用户既定偏好）；`dedup` 默认 `"auto"`（仅多 sheet 时按 `dedup_priority` 去重；单 sheet 不去重，避免误删同日同额交易），可填 `true`/`false` 强制；CSV 编码自动探测（utf-8/gbk/gb18030），异常时用 `encoding` 字段指定。
+说明：`big_threshold` 大额阈值按规模酌定（社团 20 万、个人可设 5 万）；`mask_site:true` 时网站与图表版脱敏（保留姓、名转 `*`，如 `张伟明→张**`）、文字版留真名（用户既定偏好）；`dedup` 默认 `"auto"`（仅多 sheet 时按 `dedup_priority` 去重；单 sheet 不去重，避免误删同日同额交易），可填 `true`/`false` 强制；CSV 编码自动探测（utf-8/gbk/gb18030），异常时用 `encoding` 字段指定；`embed_echarts` 默认 `true`，把 ECharts 内联进网站与图表版（产出自包含、可离线/微信直接打开的单文件，每个约 +1MB），设 `false` 则引用 CDN（文件小但需联网）。
 
 ### Step 2：跑分析引擎
 ```

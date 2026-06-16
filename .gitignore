@@ -8,6 +8,7 @@ analysis/
 index.html
 charts.html
 report.html
+echarts.min.js
 pic/*.jpg
 pic/*.png
 !examples/

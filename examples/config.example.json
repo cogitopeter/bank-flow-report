@@ -16,6 +16,7 @@
   "dedup": "auto",
   "big_threshold": 200000,
   "mask_site": true,
+  "embed_echarts": true,
   "subtitle": "银行账户流水财务分析报告",
   "report_date": "2026-01-01",
   "meta": {

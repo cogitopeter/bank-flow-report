@@ -17,6 +17,16 @@ N = json.load(open(NARR, encoding='utf-8')) if os.path.exists(NARR) else {}
 MASK_SITE = cfg.get('mask_site', True)
 M = D['meta']; OV = D['overview']
 
+# ---------- ECharts：默认把本地缓存内联进网站/图表版（自包含、可离线打开）；缺失或显式关闭则回退 CDN ----------
+CDN_ECHARTS = '<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>'
+def load_echarts():
+    ech = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'echarts.min.js')
+    if cfg.get('embed_echarts', True) and os.path.exists(ech):
+        js = open(ech, encoding='utf-8').read().replace('</script>', '<\\/script>')  # 防止提前闭合
+        return '<script>' + js + '</script>'
+    return CDN_ECHARTS
+ECHARTS = load_echarts()
+
 # ---------- 姓名脱敏 ----------
 ORG_KW = ['市','县','区','省','局','委','办','会','厅','政府','街道','财政','专户','银行','公司','中心',
  '研究院','学院','大学','协会','商会','工作室','事务所','合伙','传媒','传播','科技','广告','网络','文化',
@@ -106,7 +116,7 @@ def render(tpl):
 TPL_INDEX = r'''<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>__NAME__ · 财务分析报告</title><link rel="icon" href="pic/favicon.png">
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+__ECHARTS__
 <style>
 :root{--navy:#1e3a5f;--navy-d:#14293f;--gold:#c5a572;--gold-d:#a8884f;--green:#10b981;--green-d:#047857;
 --red:#ef4444;--red-d:#b91c1c;--blue:#3b82f6;--ink:#1f2937;--gray:#6b7280;--line:#e5e7eb;--bg:#f4f6f9;}
@@ -302,7 +312,7 @@ navas.forEach(a=>a.addEventListener('click',()=>document.getElementById('nl').cl
 # ============================================================= 图表版（简版，复用网站图表区）
 TPL_CHARTS = r'''<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>__NAME__ · 银行流水分析（图表版）</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script><style>
+__ECHARTS__<style>
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",Arial,sans-serif;background:#f4f6f9;color:#1f2937;line-height:1.6}
 .container{max-width:1280px;margin:0 auto;padding:32px 24px 64px}
 .header{background:linear-gradient(135deg,#1e3a5f,#2d5078);color:#fff;padding:36px 40px;border-radius:12px;margin-bottom:24px}
@@ -451,12 +461,12 @@ os.makedirs(os.path.join(OUT, 'pic'), exist_ok=True)
 logo_ch = (M.get('name') or '账')[0]
 
 # 网站
-idx = render(TPL_INDEX).replace('__LOGOCH__', logo_ch)
+idx = render(TPL_INDEX).replace('__LOGOCH__', logo_ch).replace('__ECHARTS__', ECHARTS)
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(idx)
 
 # 图表版（脱敏数据；总结=exec+findings）
 sf = '<p>' + '</p><p>'.join(f"<b>{f.get('t','')}</b> {f.get('d','')}" for f in N.get('findings', [])) + '</p>' if N.get('findings') else ''
-ch = render(TPL_CHARTS).replace('__SUMMARY_FINDINGS__', sf)
+ch = render(TPL_CHARTS).replace('__SUMMARY_FINDINGS__', sf).replace('__ECHARTS__', ECHARTS)
 open(os.path.join(OUT, 'charts.html'), 'w', encoding='utf-8').write(ch)
 
 # 文字版（按 config：默认留真名）—— 用未脱敏 D 渲染表格
